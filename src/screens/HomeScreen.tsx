@@ -1,59 +1,80 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  ScrollView,
-  Image,
-  TextInput,
-  Modal,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as ImagePicker from "expo-image-picker";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../services/firebase";
-import { RootStackParamList } from "../navigation/AppNavigator";
-import { useAuth } from "../context/AuthContext";
-import { Comunicado, Publicacion, Incidencia, Evento, Comentario } from "../constants/types";
-import { subscribeComunicados } from "../services/comunicados";
+import React, { useEffect, useState } from "react";
 import {
-  subscribePublicaciones,
-  crearPublicacion,
-  subirImagenStorage,
-  eliminarPublicacion,
-  toggleLikePublicacion,
-  agregarComentarioPublicacion,
-} from "../services/marketplace";
-import { subscribeIncidencias } from "../services/incidencias";
-import { subscribeEventos, toggleAsistenciaEvento, eliminarEvento } from "../services/eventos";
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { CommentsModal } from "../components/CommentsModal";
 import { EventCard } from "../components/EventCard";
 import { SocialBar } from "../components/SocialBar";
-import { CommentsModal } from "../components/CommentsModal";
-import { uploadImageToCloudinary } from "../services/cloudinary";
 import {
+  Comunicado,
+  Evento,
+  Incidencia,
+  Publicacion,
+} from "../constants/types";
+import { useAuth } from "../context/AuthContext";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import { uploadImageToCloudinary } from "../services/cloudinary";
+import { toggleLikeEntidad } from "../services/comentarios";
+import { subscribeComunicados } from "../services/comunicados";
+import {
+  eliminarEvento,
+  subscribeEventos,
+  toggleAsistenciaEvento,
+} from "../services/eventos";
+import { db } from "../services/firebase";
+import { subscribeIncidencias } from "../services/incidencias";
+import {
+  crearPublicacion,
+  eliminarPublicacion,
+  subirImagenStorage,
+  subscribePublicaciones,
+  toggleLikePublicacion,
+} from "../services/marketplace";
+import {
+  crearEncuesta,
+  crearPost,
+  eliminarPost,
   PostDoc,
   subscribePosts,
-  crearPost,
-  crearEncuesta,
   votarEncuesta,
-  eliminarPost,
 } from "../services/posts";
-import { toggleLikeEntidad } from "../services/comentarios";
 import { styles } from "./HomeScreen.styles";
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
-type FilterType = "todos" | "comunicados" | "mercado" | "servicios" | "reclamos";
+type FilterType =
+  | "todos"
+  | "comunicados"
+  | "posts"
+  | "mercado"
+  | "servicios"
+  | "reclamos";
 
 interface FeedItem {
   id: string;
-  itemType: "comunicado" | "producto" | "servicio" | "post" | "reclamo" | "evento" | "encuesta";
+  itemType:
+    | "comunicado"
+    | "producto"
+    | "servicio"
+    | "post"
+    | "reclamo"
+    | "evento"
+    | "encuesta";
   isPinned?: boolean;
   rawDate: string;
   data: Comunicado | Publicacion | Incidencia | Evento | PostDoc;
@@ -100,16 +121,26 @@ export const HomeScreen: React.FC = () => {
   } | null>(null);
 
   // Estado de Asistentes a Eventos (Modal)
-  const [selectedEventoAttendees, setSelectedEventoAttendees] = useState<Evento | null>(null);
-  const [asistentesDetalle, setAsistentesDetalle] = useState<AsistenteDetalle[]>([]);
+  const [selectedEventoAttendees, setSelectedEventoAttendees] =
+    useState<Evento | null>(null);
+  const [asistentesDetalle, setAsistentesDetalle] = useState<
+    AsistenteDetalle[]
+  >([]);
   const [asistentesLoading, setAsistentesLoading] = useState<boolean>(false);
 
-  const isAdminOrModerator = user?.rol === "superadmin" || user?.rol === "moderador";
+  const isAdminOrModerator =
+    user?.rol === "superadmin" || user?.rol === "moderador";
 
   useEffect(() => {
-    const unsubComunicados = subscribeComunicados((list) => setComunicados(list));
-    const unsubPublicaciones = subscribePublicaciones((list) => setPublicaciones(list));
-    const unsubIncidencias = subscribeIncidencias((list) => setIncidencias(list));
+    const unsubComunicados = subscribeComunicados((list) =>
+      setComunicados(list),
+    );
+    const unsubPublicaciones = subscribePublicaciones((list) =>
+      setPublicaciones(list),
+    );
+    const unsubIncidencias = subscribeIncidencias((list) =>
+      setIncidencias(list),
+    );
     const unsubEventos = subscribeEventos((list) => setEventos(list));
     const unsubPosts = subscribePosts(
       (list) => {
@@ -120,7 +151,7 @@ export const HomeScreen: React.FC = () => {
       (error) => {
         setLoading(false);
         setRefreshing(false);
-      }
+      },
     );
 
     return () => {
@@ -135,12 +166,18 @@ export const HomeScreen: React.FC = () => {
   const handleCreatePost = async () => {
     if (!user) return;
     if (user.status === "suspendido" || (user as any).puedePublicar === false) {
-      Alert.alert("Acceso Restringido", "No tienes permisos para publicar en la comunidad.");
+      Alert.alert(
+        "Acceso Restringido",
+        "No tienes permisos para publicar en la comunidad.",
+      );
       return;
     }
 
     if (!postTexto.trim() && !postImageUri) {
-      Alert.alert("Publicación vacía", "Escribe un mensaje o adjunta una foto para publicar.");
+      Alert.alert(
+        "Publicación vacía",
+        "Escribe un mensaje o adjunta una foto para publicar.",
+      );
       return;
     }
 
@@ -154,9 +191,15 @@ export const HomeScreen: React.FC = () => {
       await crearPost(user, postTexto.trim(), finalImgUrl);
       setPostTexto("");
       setPostImageUri(null);
-      Alert.alert("Éxito", "Tu publicación ha sido compartida con la comunidad.");
+      Alert.alert(
+        "Éxito",
+        "Tu publicación ha sido compartida con la comunidad.",
+      );
     } catch (error: any) {
-      Alert.alert("Error", error.message || "No se pudo realizar la publicación.");
+      Alert.alert(
+        "Error",
+        error.message || "No se pudo realizar la publicación.",
+      );
     } finally {
       setPublishing(false);
     }
@@ -165,7 +208,10 @@ export const HomeScreen: React.FC = () => {
   const handleCreateEncuesta = async () => {
     if (!user) return;
     if (!preguntaEncuesta.trim() || !opcion1.trim() || !opcion2.trim()) {
-      Alert.alert("Encuesta Incompleta", "Ingresa la pregunta y al menos 2 opciones de respuesta.");
+      Alert.alert(
+        "Encuesta Incompleta",
+        "Ingresa la pregunta y al menos 2 opciones de respuesta.",
+      );
       return;
     }
 
@@ -181,7 +227,10 @@ export const HomeScreen: React.FC = () => {
       setOpcion2("");
       setOpcion3("");
       setIsEncuestaMode(false);
-      Alert.alert("Éxito", "La encuesta fijada ha sido publicada en la comunidad.");
+      Alert.alert(
+        "Éxito",
+        "La encuesta fijada ha sido publicada en la comunidad.",
+      );
     } catch (error: any) {
       Alert.alert("Error", error.message || "No se pudo crear la encuesta.");
     } finally {
@@ -191,7 +240,10 @@ export const HomeScreen: React.FC = () => {
 
   const handlePublishPost = async () => {
     if (!postTexto.trim() && !postImageUri) {
-      Alert.alert("Publicación vacía", "Escribe un mensaje o adjunta una foto.");
+      Alert.alert(
+        "Publicación vacía",
+        "Escribe un mensaje o adjunta una foto.",
+      );
       return;
     }
     if (!user) return;
@@ -218,7 +270,10 @@ export const HomeScreen: React.FC = () => {
 
       setPostTexto("");
       setPostImageUri(null);
-      Alert.alert("Publicado", "Tu mensaje ha sido compartido en la comunidad.");
+      Alert.alert(
+        "Publicado",
+        "Tu mensaje ha sido compartido en la comunidad.",
+      );
     } catch (err: any) {
       Alert.alert("Error", "No se pudo crear la publicación.");
     } finally {
@@ -237,20 +292,24 @@ export const HomeScreen: React.FC = () => {
   };
 
   const handleDeletePublicacion = (publicacionId: string) => {
-    Alert.alert("Eliminar Publicación", "¿Deseas eliminar esta publicación del marketplace?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await eliminarPublicacion(publicacionId);
-          } catch (err) {
-            Alert.alert("Error", "No se pudo eliminar la publicación.");
-          }
+    Alert.alert(
+      "Eliminar Publicación",
+      "¿Deseas eliminar esta publicación del marketplace?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await eliminarPublicacion(publicacionId);
+            } catch (err) {
+              Alert.alert("Error", "No se pudo eliminar la publicación.");
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handlePickPostImage = async () => {
@@ -273,20 +332,24 @@ export const HomeScreen: React.FC = () => {
   };
 
   const handleDeletePostDoc = (postId: string) => {
-    Alert.alert("Eliminar Publicación", "¿Deseas eliminar esta publicación del feed?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await eliminarPost(postId);
-          } catch (err) {
-            Alert.alert("Error", "No se pudo eliminar.");
-          }
+    Alert.alert(
+      "Eliminar Publicación",
+      "¿Deseas eliminar esta publicación del feed?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await eliminarPost(postId);
+            } catch (err) {
+              Alert.alert("Error", "No se pudo eliminar.");
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const renderListHeader = () => (
@@ -295,25 +358,49 @@ export const HomeScreen: React.FC = () => {
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
           <TouchableOpacity
             style={[
-              { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center", backgroundColor: "#F1F5F9" },
+              {
+                flex: 1,
+                paddingVertical: 8,
+                borderRadius: 8,
+                alignItems: "center",
+                backgroundColor: "#F1F5F9",
+              },
               !isEncuestaMode && { backgroundColor: "#234919" },
             ]}
             onPress={() => setIsEncuestaMode(false)}
           >
-            <Text style={{ fontSize: 12, fontWeight: "bold", color: !isEncuestaMode ? "#FFFFFF" : "#64748B" }}>
-              📝 Publicación
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "bold",
+                color: !isEncuestaMode ? "#FFFFFF" : "#64748B",
+              }}
+            >
+              Publicación
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center", backgroundColor: "#F1F5F9" },
+              {
+                flex: 1,
+                paddingVertical: 8,
+                borderRadius: 8,
+                alignItems: "center",
+                backgroundColor: "#F1F5F9",
+              },
               isEncuestaMode && { backgroundColor: "#234919" },
             ]}
             onPress={() => setIsEncuestaMode(true)}
           >
-            <Text style={{ fontSize: 12, fontWeight: "bold", color: isEncuestaMode ? "#FFFFFF" : "#64748B" }}>
-              📊 Encuesta Fijada
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "bold",
+                color: isEncuestaMode ? "#FFFFFF" : "#64748B",
+              }}
+            >
+              Encuesta Fijada
             </Text>
           </TouchableOpacity>
         </View>
@@ -325,28 +412,60 @@ export const HomeScreen: React.FC = () => {
             Crear Encuesta Comunal (Fijada al inicio)
           </Text>
           <TextInput
-            style={{ backgroundColor: "#F8F9FA", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 8, fontSize: 13, color: "#0F172A" }}
+            style={{
+              backgroundColor: "#F8F9FA",
+              borderWidth: 1,
+              borderColor: "#E2E8F0",
+              borderRadius: 8,
+              padding: 8,
+              fontSize: 13,
+              color: "#0F172A",
+            }}
             placeholder="Pregunta de la encuesta..."
             placeholderTextColor="#94A3B8"
             value={preguntaEncuesta}
             onChangeText={setPreguntaEncuesta}
           />
           <TextInput
-            style={{ backgroundColor: "#F8F9FA", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 8, fontSize: 12, color: "#0F172A" }}
+            style={{
+              backgroundColor: "#F8F9FA",
+              borderWidth: 1,
+              borderColor: "#E2E8F0",
+              borderRadius: 8,
+              padding: 8,
+              fontSize: 12,
+              color: "#0F172A",
+            }}
             placeholder="Opción 1"
             placeholderTextColor="#94A3B8"
             value={opcion1}
             onChangeText={setOpcion1}
           />
           <TextInput
-            style={{ backgroundColor: "#F8F9FA", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 8, fontSize: 12, color: "#0F172A" }}
+            style={{
+              backgroundColor: "#F8F9FA",
+              borderWidth: 1,
+              borderColor: "#E2E8F0",
+              borderRadius: 8,
+              padding: 8,
+              fontSize: 12,
+              color: "#0F172A",
+            }}
             placeholder="Opción 2"
             placeholderTextColor="#94A3B8"
             value={opcion2}
             onChangeText={setOpcion2}
           />
           <TextInput
-            style={{ backgroundColor: "#F8F9FA", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 8, fontSize: 12, color: "#0F172A" }}
+            style={{
+              backgroundColor: "#F8F9FA",
+              borderWidth: 1,
+              borderColor: "#E2E8F0",
+              borderRadius: 8,
+              padding: 8,
+              fontSize: 12,
+              color: "#0F172A",
+            }}
             placeholder="Opción 3 (Opcional)"
             placeholderTextColor="#94A3B8"
             value={opcion3}
@@ -361,7 +480,9 @@ export const HomeScreen: React.FC = () => {
             {publishing ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.publishBtnText}>Publicar Encuesta Fijada</Text>
+              <Text style={styles.publishBtnText}>
+                Publicar Encuesta Fijada
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -369,7 +490,9 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.createPostHeader}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>
-              {user?.nombreCompleto ? user.nombreCompleto.charAt(0).toUpperCase() : "U"}
+              {user?.nombreCompleto
+                ? user.nombreCompleto.charAt(0).toUpperCase()
+                : "U"}
             </Text>
           </View>
           <TextInput
@@ -381,11 +504,17 @@ export const HomeScreen: React.FC = () => {
             multiline
           />
           {postImageUri ? (
-            <TouchableOpacity onPress={() => setPostImageUri(null)} style={{ padding: 4 }}>
+            <TouchableOpacity
+              onPress={() => setPostImageUri(null)}
+              style={{ padding: 4 }}
+            >
               <Ionicons name="close-circle" size={20} color="#EF4444" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={handlePickPostImage} style={{ padding: 4 }}>
+            <TouchableOpacity
+              onPress={handlePickPostImage}
+              style={{ padding: 4 }}
+            >
               <Ionicons name="image-outline" size={22} color="#234919" />
             </TouchableOpacity>
           )}
@@ -430,7 +559,8 @@ export const HomeScreen: React.FC = () => {
           };
         }
         const data = docSnap.data();
-        const nombreCompleto = data.nombreCompleto || data.nombre || "Residente";
+        const nombreCompleto =
+          data.nombreCompleto || data.nombre || "Residente";
         let inmuebleTexto = "";
 
         if (data.inmueble) {
@@ -489,7 +619,8 @@ export const HomeScreen: React.FC = () => {
       id: `e_${e.id}`,
       itemType: "evento",
       isPinned: e.categoria === "asamblea",
-      rawDate: e.fechaActualizacion || e.fechaCreacion || new Date().toISOString(),
+      rawDate:
+        e.fechaActualizacion || e.fechaCreacion || new Date().toISOString(),
       data: e,
     });
   });
@@ -500,7 +631,12 @@ export const HomeScreen: React.FC = () => {
     if (NOW - postTime <= SEVEN_DAYS_MS) {
       feedItems.push({
         id: `p_${p.id}`,
-        itemType: p.tipo === "post" ? "post" : p.tipo === "servicio" ? "servicio" : "producto",
+        itemType:
+          p.tipo === "post"
+            ? "post"
+            : p.tipo === "servicio"
+              ? "servicio"
+              : "producto",
         isPinned: false,
         rawDate: p.fechaCreacion || new Date().toISOString(),
         data: p,
@@ -519,6 +655,17 @@ export const HomeScreen: React.FC = () => {
     });
   });
 
+  // 5. Posts de la comunidad y encuestas
+  posts.forEach((p) => {
+    feedItems.push({
+      id: `post_${p.id}`,
+      itemType: p.isEncuesta ? "encuesta" : "post",
+      isPinned: !!p.fijada || !!p.isEncuesta,
+      rawDate: p.fechaCreacion || new Date().toISOString(),
+      data: p,
+    });
+  });
+
   feedItems.sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
@@ -527,7 +674,13 @@ export const HomeScreen: React.FC = () => {
 
   const filteredItems = feedItems.filter((item) => {
     if (activeFilter === "todos") return true;
-    if (activeFilter === "comunicados") return item.itemType === "comunicado" || item.itemType === "evento";
+    if (activeFilter === "comunicados")
+      return (
+        item.itemType === "comunicado" ||
+        item.itemType === "encuesta" ||
+        item.itemType === "evento"
+      );
+    if (activeFilter === "posts") return item.itemType === "post";
     if (activeFilter === "mercado") return item.itemType === "producto";
     if (activeFilter === "servicios") return item.itemType === "servicio";
     if (activeFilter === "reclamos") return item.itemType === "reclamo";
@@ -537,7 +690,10 @@ export const HomeScreen: React.FC = () => {
   const renderFeedItem = ({ item }: { item: FeedItem }) => {
     if (item.itemType === "encuesta") {
       const p = item.data as PostDoc;
-      const totalVotos = (p.opcionesEncuesta || []).reduce((sum, op) => sum + (op.votos?.length || 0), 0);
+      const totalVotos = (p.opcionesEncuesta || []).reduce(
+        (sum, op) => sum + (op.votos?.length || 0),
+        0,
+      );
 
       return (
         <View style={[styles.card, styles.pinnedCard]}>
@@ -548,7 +704,9 @@ export const HomeScreen: React.FC = () => {
               </View>
               <View>
                 <Text style={styles.authorName}>{p.nombreUsuario}</Text>
-                <Text style={styles.authorSubtext}>Encuesta Comunal Fijada</Text>
+                <Text style={styles.authorSubtext}>
+                  Encuesta Comunal Fijada
+                </Text>
               </View>
             </View>
             {isAdminOrModerator && (
@@ -565,7 +723,8 @@ export const HomeScreen: React.FC = () => {
           <View style={{ marginVertical: 6, gap: 8 }}>
             {(p.opcionesEncuesta || []).map((op) => {
               const numVotos = op.votos?.length || 0;
-              const porcentaje = totalVotos > 0 ? Math.round((numVotos / totalVotos) * 100) : 0;
+              const porcentaje =
+                totalVotos > 0 ? Math.round((numVotos / totalVotos) * 100) : 0;
               const votedThis = (op.votos || []).includes(user?.uid || "");
 
               return (
@@ -582,23 +741,62 @@ export const HomeScreen: React.FC = () => {
                     if (user) votarEncuesta(p.id, op.id, user.uid);
                   }}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: "#0F172A" }}>
-                      {votedThis ? "✓ " : ""}{op.texto}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: "#0F172A",
+                      }}
+                    >
+                      {votedThis ? "✓ " : ""}
+                      {op.texto}
                     </Text>
-                    <Text style={{ fontSize: 12, fontWeight: "bold", color: "#234919" }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "bold",
+                        color: "#234919",
+                      }}
+                    >
                       {porcentaje}% ({numVotos})
                     </Text>
                   </View>
-                  <View style={{ height: 6, backgroundColor: "#E2E8F0", borderRadius: 3, overflow: "hidden" }}>
-                    <View style={{ width: `${porcentaje}%`, height: "100%", backgroundColor: "#234919" }} />
+                  <View
+                    style={{
+                      height: 6,
+                      backgroundColor: "#E2E8F0",
+                      borderRadius: 3,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: `${porcentaje}%`,
+                        height: "100%",
+                        backgroundColor: "#234919",
+                      }}
+                    />
                   </View>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2, marginBottom: 4 }}>
+          <Text
+            style={{
+              fontSize: 11,
+              color: "#64748B",
+              marginTop: 2,
+              marginBottom: 4,
+            }}
+          >
             Total votos: {totalVotos}
           </Text>
 
@@ -606,8 +804,16 @@ export const HomeScreen: React.FC = () => {
             likes={p.likes}
             comentariosCount={p.numComentarios || 0}
             currentUserId={user?.uid}
-            onToggleLike={() => user && toggleLikeEntidad(p.id, "posts", user.uid, p.likes || [])}
-            onOpenComments={() => setCommentTarget({ id: p.id, tipo: "posts", titulo: p.preguntaEncuesta || p.texto })}
+            onToggleLike={() =>
+              user && toggleLikeEntidad(p.id, "posts", user.uid, p.likes || [])
+            }
+            onOpenComments={() =>
+              setCommentTarget({
+                id: p.id,
+                tipo: "posts",
+                titulo: p.preguntaEncuesta || p.texto,
+              })
+            }
           />
         </View>
       );
@@ -623,7 +829,9 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.authorRow}>
               <View style={styles.avatarCircle}>
                 <Text style={styles.avatarText}>
-                  {p.nombreUsuario ? p.nombreUsuario.charAt(0).toUpperCase() : "U"}
+                  {p.nombreUsuario
+                    ? p.nombreUsuario.charAt(0).toUpperCase()
+                    : "U"}
                 </Text>
               </View>
               <View>
@@ -638,18 +846,28 @@ export const HomeScreen: React.FC = () => {
             )}
           </View>
 
-          <Text style={[styles.cardBody, { marginVertical: 4 }]}>{p.texto}</Text>
+          <Text style={[styles.cardBody, { marginVertical: 4 }]}>
+            {p.texto}
+          </Text>
 
           {!!p.imagenUrl && (
-            <Image source={{ uri: p.imagenUrl }} style={styles.postImage} resizeMode="cover" />
+            <Image
+              source={{ uri: p.imagenUrl }}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
           )}
 
           <SocialBar
             likes={p.likes}
             comentariosCount={p.numComentarios || 0}
             currentUserId={user?.uid}
-            onToggleLike={() => user && toggleLikeEntidad(p.id, "posts", user.uid, p.likes || [])}
-            onOpenComments={() => setCommentTarget({ id: p.id, tipo: "posts", titulo: p.texto })}
+            onToggleLike={() =>
+              user && toggleLikeEntidad(p.id, "posts", user.uid, p.likes || [])
+            }
+            onOpenComments={() =>
+              setCommentTarget({ id: p.id, tipo: "posts", titulo: p.texto })
+            }
           />
         </View>
       );
@@ -662,15 +880,22 @@ export const HomeScreen: React.FC = () => {
           currentUserId={user?.uid}
           isAdminOrModerator={isAdminOrModerator}
           onDelete={(id) => eliminarEvento(id)}
-          onEdit={(evt) => navigation.navigate("AdminCreateEvent", { eventoToEdit: evt })}
+          onEdit={(evt) =>
+            navigation.navigate("AdminCreateEvent", { eventoToEdit: evt })
+          }
           onToggleAttendance={async (evt) => {
             if (!user) return;
             const yaAsiste = (evt.asistentes || []).includes(user.uid);
             await toggleAsistenciaEvento(evt.id, user.uid, yaAsiste);
           }}
           onShowAttendeesList={handleOpenAttendeesModal}
-          onToggleLike={() => user && toggleLikeEntidad(e.id, "eventos", user.uid, (e as any).likes || [])}
-          onOpenComments={() => setCommentTarget({ id: e.id, tipo: "eventos", titulo: e.titulo })}
+          onToggleLike={() =>
+            user &&
+            toggleLikeEntidad(e.id, "eventos", user.uid, (e as any).likes || [])
+          }
+          onOpenComments={() =>
+            setCommentTarget({ id: e.id, tipo: "eventos", titulo: e.titulo })
+          }
         />
       );
     }
@@ -701,7 +926,9 @@ export const HomeScreen: React.FC = () => {
                 </View>
               )}
               <View style={[styles.soberBadge, styles.adminBadge]}>
-                <Text style={[styles.soberBadgeText, styles.adminBadgeText]}>ADMIN</Text>
+                <Text style={[styles.soberBadgeText, styles.adminBadgeText]}>
+                  ADMIN
+                </Text>
               </View>
             </View>
           </View>
@@ -725,15 +952,20 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.authorRow}>
-              <View style={[styles.avatarCircle, { backgroundColor: "#5CA838" }]}>
+              <View
+                style={[styles.avatarCircle, { backgroundColor: "#5CA838" }]}
+              >
                 <Text style={styles.avatarText}>
-                  {p.vendedorNombre ? p.vendedorNombre.charAt(0).toUpperCase() : "V"}
+                  {p.vendedorNombre
+                    ? p.vendedorNombre.charAt(0).toUpperCase()
+                    : "V"}
                 </Text>
               </View>
               <View>
                 <Text style={styles.authorName}>{p.vendedorNombre}</Text>
                 <Text style={styles.authorSubtext}>
-                  Torre {p.vendedorInmueble?.torre} - Apto {p.vendedorInmueble?.codigo}
+                  Torre {p.vendedorInmueble?.torre} - Apto{" "}
+                  {p.vendedorInmueble?.codigo}
                 </Text>
               </View>
             </View>
@@ -759,15 +991,30 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.postBody}>{p.descripcion}</Text>
 
           {p.imagenUrl ? (
-            <Image source={{ uri: p.imagenUrl }} style={styles.mediaImage} resizeMode="cover" />
+            <Image
+              source={{ uri: p.imagenUrl }}
+              style={styles.mediaImage}
+              resizeMode="cover"
+            />
           ) : null}
 
           <SocialBar
             likes={p.likes}
-            comentariosCount={(p as any).numComentarios || p.comentarios?.length || 0}
+            comentariosCount={
+              (p as any).numComentarios || p.comentarios?.length || 0
+            }
             currentUserId={user?.uid}
-            onToggleLike={() => user && toggleLikeEntidad(p.id, "publicaciones", user.uid, p.likes || [])}
-            onOpenComments={() => setCommentTarget({ id: p.id, tipo: "publicaciones", titulo: p.titulo })}
+            onToggleLike={() =>
+              user &&
+              toggleLikeEntidad(p.id, "publicaciones", user.uid, p.likes || [])
+            }
+            onOpenComments={() =>
+              setCommentTarget({
+                id: p.id,
+                tipo: "publicaciones",
+                titulo: p.titulo,
+              })
+            }
           />
 
           <View style={{ marginTop: 8, alignItems: "flex-end" }}>
@@ -789,8 +1036,14 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.authorRow}>
-              <View style={[styles.avatarCircle, { backgroundColor: "#64748B" }]}>
-                <Ionicons name="alert-circle-outline" size={20} color="#FFFFFF" />
+              <View
+                style={[styles.avatarCircle, { backgroundColor: "#64748B" }]}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={20}
+                  color="#FFFFFF"
+                />
               </View>
               <View>
                 <Text style={styles.authorName}>Reporte Comunal</Text>
@@ -814,8 +1067,22 @@ export const HomeScreen: React.FC = () => {
             likes={(inc as any).likes}
             comentariosCount={(inc as any).numComentarios || 0}
             currentUserId={user?.uid}
-            onToggleLike={() => user && toggleLikeEntidad(inc.id, "incidencias", user.uid, (inc as any).likes || [])}
-            onOpenComments={() => setCommentTarget({ id: inc.id, tipo: "incidencias", titulo: inc.titulo })}
+            onToggleLike={() =>
+              user &&
+              toggleLikeEntidad(
+                inc.id,
+                "incidencias",
+                user.uid,
+                (inc as any).likes || [],
+              )
+            }
+            onOpenComments={() =>
+              setCommentTarget({
+                id: inc.id,
+                tipo: "incidencias",
+                titulo: inc.titulo,
+              })
+            }
           />
 
           <View style={styles.cardFooter}>
@@ -864,6 +1131,7 @@ export const HomeScreen: React.FC = () => {
           {[
             { id: "todos", label: "Todos" },
             { id: "comunicados", label: "Comunicados" },
+            { id: "posts", label: "Posts" },
             { id: "mercado", label: "Mercado" },
             { id: "servicios", label: "Servicios" },
             { id: "reclamos", label: "Reclamos" },
@@ -876,7 +1144,10 @@ export const HomeScreen: React.FC = () => {
                 onPress={() => setActiveFilter(f.id as FilterType)}
               >
                 <Text
-                  style={[styles.filterText, isActive && styles.filterTextActive]}
+                  style={[
+                    styles.filterText,
+                    isActive && styles.filterTextActive,
+                  ]}
                 >
                   {f.label}
                 </Text>
@@ -908,7 +1179,9 @@ export const HomeScreen: React.FC = () => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="newspaper-outline" size={48} color="#94A3B8" />
-              <Text style={styles.emptyTitle}>No hay publicaciones en esta sección</Text>
+              <Text style={styles.emptyTitle}>
+                No hay publicaciones en esta sección
+              </Text>
               <Text style={styles.emptySubtitle}>
                 El contenido actualizado aparecerá en este feed.
               </Text>
@@ -933,14 +1206,18 @@ export const HomeScreen: React.FC = () => {
 
             <View style={styles.badgeCountContainer}>
               <Text style={styles.attendeesTotalText}>
-                Total confirmados: {(selectedEventoAttendees?.asistentes || []).length} residente(s)
+                Total confirmados:{" "}
+                {(selectedEventoAttendees?.asistentes || []).length}{" "}
+                residente(s)
               </Text>
             </View>
 
             {asistentesLoading ? (
               <View style={styles.modalLoadingBox}>
                 <ActivityIndicator size="large" color="#234919" />
-                <Text style={styles.modalLoadingText}>Consultando residentes...</Text>
+                <Text style={styles.modalLoadingText}>
+                  Consultando residentes...
+                </Text>
               </View>
             ) : asistentesDetalle.length === 0 ? (
               <View style={styles.modalEmptyBox}>
@@ -962,15 +1239,22 @@ export const HomeScreen: React.FC = () => {
                       <Ionicons name="person" size={16} color="#234919" />
                     </View>
                     <View style={styles.attendeeInfo}>
-                      <Text style={styles.attendeeName}>{item.nombreCompleto}</Text>
-                      <Text style={styles.attendeeInmueble}>{item.inmuebleTexto}</Text>
+                      <Text style={styles.attendeeName}>
+                        {item.nombreCompleto}
+                      </Text>
+                      <Text style={styles.attendeeInmueble}>
+                        {item.inmuebleTexto}
+                      </Text>
                     </View>
                   </View>
                 )}
               />
             )}
 
-            <TouchableOpacity style={styles.closeBtn} onPress={handleCloseAttendeesModal}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={handleCloseAttendeesModal}
+            >
               <Text style={styles.closeBtnText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
