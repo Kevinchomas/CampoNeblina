@@ -28,6 +28,7 @@ import {
 } from "../constants/types";
 import { useAuth } from "../context/AuthContext";
 import { RootStackParamList } from "../navigation/AppNavigator";
+import { ejecutarLimpiezaAutomatica } from "../services/cleanupService";
 import { uploadImageToCloudinary } from "../services/cloudinary";
 import { toggleLikeEntidad } from "../services/comentarios";
 import { subscribeComunicados } from "../services/comunicados";
@@ -132,6 +133,7 @@ export const HomeScreen: React.FC = () => {
     user?.rol === "superadmin" || user?.rol === "moderador";
 
   useEffect(() => {
+    ejecutarLimpiezaAutomatica();
     const unsubComunicados = subscribeComunicados((list) =>
       setComunicados(list),
     );

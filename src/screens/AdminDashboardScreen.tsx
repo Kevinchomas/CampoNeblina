@@ -25,6 +25,7 @@ import {
   subscribeIncidencias,
   cambiarEstadoIncidencia,
 } from "../services/incidencias";
+import { limpiarTodaLaApp } from "../services/cleanupService";
 import { styles } from "./AdminDashboardScreen.styles";
 
 type AdminTab = "usuarios" | "mercado" | "reclamos";
@@ -95,6 +96,44 @@ export const AdminDashboardScreen: React.FC = () => {
     } catch (err: any) {
       Alert.alert("Error", "No se pudo actualizar el estatus.");
     }
+  };
+
+  const handlePanicCleanup = () => {
+    Alert.alert(
+      "⚠️ Zona de Peligro - Limpieza General",
+      "¿Estás seguro de eliminar todo el contenido de la app? Esta acción no se puede deshacer.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sí, Limpiar Todo",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "⚠️ Confirmación Final",
+              "¿Confirmas que deseas purgar todo el contenido multimedia y registros de las colecciones (posts, comunicados, publicaciones, eventos, incidencias, chats, comentarios)? Los usuarios registrados se mantendrán intactos.",
+              [
+                { text: "Abortar", style: "cancel" },
+                {
+                  text: "EJECUTAR LIMPIEZA",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      setLoading(true);
+                      await limpiarTodaLaApp();
+                      Alert.alert("Éxito", "La limpieza general de la aplicación se ha completado correctamente.");
+                    } catch (error: any) {
+                      Alert.alert("Error", error.message || "No se pudo completar la limpieza general.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const renderUserItem = ({ item }: { item: UserProfile }) => (
@@ -190,6 +229,27 @@ export const AdminDashboardScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#EF4444",
+            borderRadius: 8,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+          onPress={handlePanicCleanup}
+        >
+          <Ionicons name="warning-outline" size={18} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontWeight: "bold", fontSize: 13 }}>
+            Limpieza General / Botón de Pánico
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#234919" style={{ marginTop: 40 }} />
