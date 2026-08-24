@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function isActive() {
+      return isAuthenticated() && getUserData().status == 'activo';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        getUserData().rol == 'superadmin' || 
+        getUserData().rol == 'moderador'
+      );
+    }
+
+    // 1. Usuarios
+    match /usuarios/{userId} {
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 2. Comunicados Oficiales
+    match /comunicados/{comunicadoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 3. Marketplace (Publicaciones)
+    match /publicaciones/{publicacionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.vendedorUid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.vendedorUid == request.auth.uid || isAdmin() || request.resource.data.keys().hasAny(['likes', 'numComentarios'])
+      );
+
+      // Subcolección de comentarios por compatibilidad
+      match /comentarios/{comentarioId} {
+        allow read, create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && (
+          resource.data.usuarioUid == request.auth.uid || isAdmin()
+        );
+      }
+    }
+
+    // 4. Posts del Feed y Encuestas
+    match /posts/{postId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        resource.data.usuarioUid == request.auth.uid || isAdmin() || request.resource.data.keys().hasAny(['likes', 'opcionesEncuesta', 'numComentarios'])
+      );
+
+      match /comentarios/{comentarioId} {
+        allow read, create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && (
+          resource.data.usuarioUid == request.auth.uid || isAdmin()
+        );
+      }
+    }
+
+    // 5. Reclamos / Incidencias
+    match /incidencias/{incidenciaId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.usuarioUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.usuarioUid == request.auth.uid || isAdmin() || request.resource.data.keys().hasAny(['likes', 'numComentarios'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 6. Eventos
+    match /eventos/{eventoId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isAdmin() || request.resource.data.keys().hasAny(['likes', 'asistentes', 'numComentarios'])
+      );
+      allow create, delete: if isAdmin();
+    }
+
+    // 7. Colección global de Comentarios
+    match /comentarios/{comentarioId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        resource.data.usuarioUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    // 8. Reportes de Publicaciones
+    match /reportes_publicaciones/{reporteId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // 9. Chats Privados
+    match /chats/{chatId} {
+      allow read, write: if isAuthenticated();
+
+      match /mensajes/{mensajeId} {
+        allow read, create: if isAuthenticated();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // 10. Reportes de Chats
+    match /reportes_chats/{reporteId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}

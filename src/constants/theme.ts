@@ -1,26 +1,33 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
+// @ts-ignore
 import '@/global.css';
-
 import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    primary: "#5CA838", // Verde Bambú
+    primaryDark: "#234919", // Verde Botella Oscuro
+    background: "#FFFFFF",
+    backgroundElement: "#F5F8F4", // Gris Claro / Tarjetas
+    backgroundSelected: "#E5EAE2",
+    text: "#1A1D1A", // Negro
+    textSecondary: "#6B7280",
+    border: "#E5E7EB",
+    notification: "#EF4444",
+    success: "#10B981",
+    warning: "#F59E0B",
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    primary: "#5CA838", // Verde Bambú
+    primaryDark: "#234919", // Verde Botella Oscuro
+    background: "#1A1D1A", // Negro
+    backgroundElement: "#262926", // Gris Oscuro / Tarjetas
+    backgroundSelected: "#323832",
+    text: "#FFFFFF", // Blanco
+    textSecondary: "#9CA3AF",
+    border: "#374151",
+    notification: "#EF4444",
+    success: "#10B981",
+    warning: "#F59E0B",
   },
 } as const;
 
@@ -63,3 +70,24 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+export const theme = {
+  colors: Colors,
+  spacing: {
+    xs: Spacing.one,
+    sm: Spacing.two,
+    md: Spacing.three,
+    lg: Spacing.four,
+    xl: Spacing.five,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    round: 9999,
+  },
+};
+
+export type Theme = typeof theme;
+
