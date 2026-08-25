@@ -3,8 +3,28 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDxZdSCzQrGiToncO7xfdyPsC3KRZo-4Bo",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "camponeblina-49793.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "camponeblina-49793",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "camponeblina-49793.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "457642297248",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:457642297248:web:f1a91929b060cbdebd46c5",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-QX0DDBMKNG"
       }
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDxZdSCzQrGiToncO7xfdyPsC3KRZo-4Bo",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "camponeblina-49793.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "camponeblina-49793",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "camponeblina-49793.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "457642297248",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:457642297248:web:f1a91929b060cbdebd46c5",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-QX0DDBMKNG"
+      }
+    }
   }
 }
+

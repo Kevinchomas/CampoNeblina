@@ -6,6 +6,20 @@ import { AuthProvider } from "./src/context/AuthContext";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 
+// Configurar manejador global de errores síncronos/fatales
+// @ts-ignore
+if (typeof ErrorUtils !== "undefined" && ErrorUtils.setGlobalHandler) {
+  // @ts-ignore
+  const defaultGlobalHandler = ErrorUtils.getGlobalHandler();
+  // @ts-ignore
+  ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+    console.error("Global unhandled error caught by ErrorUtils:", error, isFatal);
+    if (defaultGlobalHandler) {
+      defaultGlobalHandler(error, isFatal);
+    }
+  });
+}
+
 try {
   SplashScreen.preventAutoHideAsync().catch(() => {});
 } catch (e) {}
@@ -37,4 +51,5 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
 
