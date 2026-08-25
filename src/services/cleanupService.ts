@@ -41,7 +41,11 @@ const borrarArchivoStorageSeguro = async (url?: string) => {
  * Limpieza automática: elimina documentos con más de 3 días (72 horas) de antigüedad.
  * Excepción estricta: NO toca la colección 'usuarios'.
  */
-export const ejecutarLimpiezaAutomatica = async (): Promise<void> => {
+export const ejecutarLimpiezaAutomatica = async (userRol?: string): Promise<void> => {
+  const rol = (userRol || "").toLowerCase();
+  if (rol !== "superadmin" && rol !== "moderador" && rol !== "admin") {
+    return;
+  }
   try {
     const ahora = new Date().getTime();
     const TRES_DIAS_MS = 3 * 24 * 60 * 60 * 1000;

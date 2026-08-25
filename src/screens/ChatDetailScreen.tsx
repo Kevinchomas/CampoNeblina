@@ -20,6 +20,7 @@ import {
   enviarMensaje,
   subscribeMensajes,
   reportarMensaje,
+  marcarChatComoLeido,
 } from "../services/chat";
 import { styles } from "./ChatDetailScreen.styles";
 
@@ -43,13 +44,15 @@ export const ChatDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const chatId = user ? getChatId(user.uid, destinatarioUid) : "";
 
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId || !user) return;
+    marcarChatComoLeido(chatId, user.uid);
     const unsubscribe = subscribeMensajes(chatId, (list) => {
       setMensajes(list);
       setLoading(false);
+      marcarChatComoLeido(chatId, user.uid);
     });
     return () => unsubscribe();
-  }, [chatId]);
+  }, [chatId, user?.uid]);
 
   const handleSend = async () => {
     if (!nuevoTexto.trim() || !user || !chatId) return;

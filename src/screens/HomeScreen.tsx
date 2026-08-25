@@ -134,7 +134,9 @@ export const HomeScreen: React.FC = () => {
     user?.rol === "superadmin" || user?.rol === "moderador";
 
   useEffect(() => {
-    ejecutarLimpiezaAutomatica();
+    if (user?.rol) {
+      ejecutarLimpiezaAutomatica(user.rol);
+    }
     const unsubComunicados = subscribeComunicados((list) =>
       setComunicados(list),
     );

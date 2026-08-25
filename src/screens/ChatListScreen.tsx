@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,39 +12,84 @@ import {
   View,
 } from "react-native";
 import { theme } from "../constants/theme";
-import { UserProfile } from "../constants/types";
+import { ChatConversacion, UserProfile } from "../constants/types";
 import { useAuth } from "../context/AuthContext";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { subscribeUsuarios } from "../services/admin";
+import { subscribeMisChats, getChatId } from "../services/chat";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChatList">;
+type FiltroTab = "Todos" | "No leídos" | "Leídos";
+
+interface ChatItemVM extends UserProfile {
+  noLeidosCount: number;
+  ultimoMensaje: string;
+}
 
 export const ChatListScreen: React.FC = () => {
   const { user } = useAuth();
   const navigation = useNavigation<NavigationProp>();
 
   const [vecinos, setVecinos] = useState<UserProfile[]>([]);
+  const [chatsMap, setChatsMap] = useState<{ [otroUid: string]: ChatConversacion }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filtro, setFiltro] = useState<'Todos' | 'No leídos' | 'Leídos'>('Todos');
 
   useEffect(() => {
-    const unsubscribe = subscribeUsuarios((list) => {
+    if (!user?.uid) return;
+
+    const unsubscribeUsuarios = subscribeUsuarios((list) => {
       const activos = list.filter(
         (u) => u.status === "activo" && u.uid !== user?.uid,
       );
       setVecinos(activos);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const unsubscribeChats = subscribeMisChats(user.uid, (chats) => {
+      const map: { [otroUid: string]: ChatConversacion } = {};
+      chats.forEach((chat) => {
+        const otroUid = chat.participantes.find((p) => p !== user.uid);
+        if (otroUid) {
+          map[otroUid] = chat;
+        }
+      });
+      setChatsMap(map);
+    });
+
+    return () => {
+      unsubscribeUsuarios();
+      unsubscribeChats();
+    };
   }, [user?.uid]);
 
-  const filteredVecinos = vecinos.filter((v) => {
+  const vecinosConChat: ChatItemVM[] = vecinos.map((vecino) => {
+    const chat = chatsMap[vecino.uid];
+    const noLeidosCount = chat && chat.noLeidos ? (chat.noLeidos[user?.uid || ""] || 0) : 0;
+    return {
+      ...vecino,
+      noLeidosCount,
+      ultimoMensaje: chat?.ultimoMensaje || "Inicia una conversación",
+    };
+  });
+
+  const filteredVecinos = vecinosConChat.filter((v) => {
     const q = searchQuery.toLowerCase();
-    return (
+    const matchSearch =
       v.nombreCompleto?.toLowerCase().includes(q) ||
       v.inmueble?.codigo?.toLowerCase().includes(q) ||
-      `torre ${v.inmueble?.torre}`.toLowerCase().includes(q)
-    );
+      `torre ${v.inmueble?.torre}`.toLowerCase().includes(q);
+
+    if (!matchSearch) return false;
+
+    if (filtro === "No leídos") {
+      return v.noLeidosCount > 0;
+    }
+    if (filtro === "Leídos") {
+      return v.noLeidosCount === 0;
+    }
+    return true;
   });
 
   const handleOpenChat = (vecino: UserProfile) => {
@@ -54,7 +100,7 @@ export const ChatListScreen: React.FC = () => {
     });
   };
 
-  const renderVecinoItem = ({ item }: { item: UserProfile }) => (
+  const renderVecinoItem = ({ item }: { item: ChatItemVM }) => (
     <TouchableOpacity
       style={styles.vecinoCard}
       onPress={() => handleOpenChat(item)}
@@ -73,8 +119,15 @@ export const ChatListScreen: React.FC = () => {
           Torre {item.inmueble?.torre} - Apto {item.inmueble?.codigo}
         </Text>
       </View>
+
+      {item.noLeidosCount > 0 && (
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>{item.noLeidosCount}</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -96,6 +149,33 @@ export const ChatListScreen: React.FC = () => {
         />
       </View>
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterContainer}
+      >
+        {(["Todos", "No leídos", "Leídos"] as FiltroTab[]).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[
+              styles.filterChip,
+              filtro === tab && styles.filterChipSelected,
+            ]}
+            onPress={() => setFiltro(tab)}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                filtro === tab && styles.filterChipTextSelected,
+              ]}
+            >
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       {loading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color="#5CA838" />
@@ -110,7 +190,7 @@ export const ChatListScreen: React.FC = () => {
             <View style={styles.emptyBox}>
               <Text style={styles.emptyTitle}>No se encontraron vecinos</Text>
               <Text style={styles.emptySubtitle}>
-                Intenta con otro término de búsqueda.
+                Intenta con otro término de búsqueda o filtro.
               </Text>
             </View>
           }
@@ -136,13 +216,6 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 18, fontWeight: "bold", color: "#234919" },
   subtitle: { fontSize: 13, color: "#6B7280", marginTop: 2 },
-  incidenciaBtn: {
-    backgroundColor: "#E5EAE2",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  incidenciaBtnText: { fontSize: 12, fontWeight: "bold", color: "#234919" },
   searchBox: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
@@ -157,6 +230,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     fontSize: 14,
     color: "#1A1D1A",
+  },
+  filterScroll: {
+    maxHeight: 50,
+    marginBottom: theme.spacing.sm,
+  },
+  filterContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    gap: 8,
+    alignItems: "center",
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: "#E5E7EB",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+  },
+  filterChipSelected: {
+    backgroundColor: "#234919",
+    borderColor: "#234919",
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#4B5563",
+  },
+  filterChipTextSelected: {
+    color: "#FFFFFF",
   },
   loadingBox: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContent: { padding: theme.spacing.lg, paddingTop: 0 },
@@ -183,9 +285,22 @@ const styles = StyleSheet.create({
   vecinoInfo: { flex: 1 },
   vecinoName: { fontSize: 15, fontWeight: "bold", color: "#1A1D1A" },
   inmuebleText: { fontSize: 13, color: "#6B7280", marginTop: 2 },
-  chatIcon: { fontSize: 20 },
+  badgeContainer: {
+    backgroundColor: "#EF4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: theme.spacing.sm,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
   emptyBox: { alignItems: "center", paddingVertical: theme.spacing.xl },
-  emptyIcon: { fontSize: 44, marginBottom: theme.spacing.sm },
   emptyTitle: { fontSize: 16, fontWeight: "bold", color: "#1A1D1A" },
   emptySubtitle: {
     fontSize: 13,

@@ -89,6 +89,15 @@ export interface MensajeChat {
   destinatarioUid: string;
   texto: string;
   fecha: string; // ISO string
+  leido?: boolean;
+}
+
+export interface ChatConversacion {
+  id: string; // chatId
+  participantes: string[]; // [uid1, uid2]
+  noLeidos: { [uid: string]: number }; // Mapa de no leídos por UID
+  ultimoMensaje: string;
+  fechaUltimoMensaje: string; // ISO string
 }
 
 export interface ReporteChat {
