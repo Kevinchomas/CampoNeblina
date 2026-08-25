@@ -18,7 +18,7 @@
     "android": {
       "package": "com.camponeblina.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "predictiveBackGestureEnabled": false
