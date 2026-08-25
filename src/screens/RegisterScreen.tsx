@@ -35,14 +35,14 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [apartamento, setApartamento] = useState<number>(1);
   const [loading, setLoading] = useState(false);
 
-  // En el piso 3 son 5 apartamentos, en los demás son 6
-  const maxApartamentos = piso === 3 ? 5 : 6;
+  // En el piso 3 los apartamentos son 1, 2, 4, 5, 6 (omitiendo el 3); en los demás pisos son 1, 2, 3, 4, 5, 6
+  const aptosDisponibles = piso === 3 ? [1, 2, 4, 5, 6] : [1, 2, 3, 4, 5, 6];
 
   useEffect(() => {
-    if (apartamento > maxApartamentos) {
-      setApartamento(maxApartamentos);
+    if (!aptosDisponibles.includes(apartamento)) {
+      setApartamento(aptosDisponibles[0]);
     }
-  }, [piso, maxApartamentos]);
+  }, [piso]);
 
   const handleRegister = async () => {
     if (!nombreCompleto.trim() || !cedulaDni.trim() || !telefono.trim() || !email.trim() || !password) {
@@ -91,7 +91,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
   const pisosDisponibles = Array.from({ length: 15 }, (_, i) => i + 1);
-  const aptosDisponibles = Array.from({ length: maxApartamentos }, (_, i) => i + 1);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>

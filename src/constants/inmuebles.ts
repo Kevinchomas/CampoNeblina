@@ -12,8 +12,8 @@ export const generateInmuebles = (): Inmueble[] => {
 
   for (const torre of torres) {
     for (let piso = 1; piso <= 15; piso++) {
-      const aptosCount = piso === 3 ? 5 : 6;
-      for (let apto = 1; apto <= aptosCount; apto++) {
+      const aptos = piso === 3 ? [1, 2, 4, 5, 6] : [1, 2, 3, 4, 5, 6];
+      for (const apto of aptos) {
         list.push({
           torre,
           piso,
