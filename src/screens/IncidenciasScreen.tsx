@@ -1,38 +1,42 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/AppNavigator";
-import { useAuth } from "../context/AuthContext";
-import { theme } from "../constants/theme";
-import { Incidencia, IncidenciaCategoria } from "../constants/types";
-import { crearIncidencia, subscribeIncidencias } from "../services/incidencias";
-import { toggleLikeEntidad } from "../services/comentarios";
-import { SocialBar } from "../components/SocialBar";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { CommentsModal } from "../components/CommentsModal";
+import { HeaderActions } from "../components/HeaderActions";
+import { SocialBar } from "../components/SocialBar";
+import { Incidencia, IncidenciaCategoria } from "../constants/types";
+import { useAuth } from "../context/AuthContext";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import { toggleLikeEntidad } from "../services/comentarios";
+import { crearIncidencia, subscribeIncidencias } from "../services/incidencias";
 import { styles } from "./IncidenciasScreen.styles";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Incidencias">;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Incidencias"
+>;
 
-const CATEGORIAS: { label: string; value: IncidenciaCategoria; icon: string }[] = [
-  { label: "Agua", value: "agua", icon: "💧" },
-  { label: "Electricidad", value: "electricidad", icon: "⚡" },
-  { label: "Ascensores", value: "ascensores", icon: "🛗" },
-  { label: "Ruido", value: "ruido", icon: "🔊" },
-  { label: "Mantenimiento", value: "mantenimiento", icon: "🧹" },
-  { label: "Otro", value: "otro", icon: "📌" },
+const CATEGORIAS: {
+  label: string;
+  value: IncidenciaCategoria;
+}[] = [
+  { label: "Agua", value: "agua" },
+  { label: "Electricidad", value: "electricidad" },
+  { label: "Ascensores", value: "ascensores" },
+  { label: "Ruido", value: "ruido" },
+  { label: "Mantenimiento", value: "mantenimiento" },
 ];
 
 export const IncidenciasScreen: React.FC = () => {
@@ -51,7 +55,8 @@ export const IncidenciasScreen: React.FC = () => {
   // Modal de Comentarios
   const [commentTarget, setCommentTarget] = useState<Incidencia | null>(null);
 
-  const isAdminOrModerator = user?.rol === "superadmin" || user?.rol === "moderador";
+  const isAdminOrModerator =
+    user?.rol === "superadmin" || user?.rol === "moderador";
 
   useEffect(() => {
     const unsubscribe = subscribeIncidencias((lista) => {
@@ -65,7 +70,10 @@ export const IncidenciasScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!titulo.trim() || !descripcion.trim()) {
-      Alert.alert("Campos requeridos", "Ingresa un título y una descripción para el reclamo.");
+      Alert.alert(
+        "Campos requeridos",
+        "Ingresa un título y una descripción para el reclamo.",
+      );
       return;
     }
     if (!user) return;
@@ -81,7 +89,10 @@ export const IncidenciasScreen: React.FC = () => {
         usuarioInmueble: user.inmueble,
       });
 
-      Alert.alert("Reclamo Enviado", "Tu reporte ha sido remitido a la Junta de Condominio.");
+      Alert.alert(
+        "Reclamo Enviado",
+        "Tu reporte ha sido remitido a la Junta de Condominio.",
+      );
       setTitulo("");
       setDescripcion("");
     } catch (error: any) {
@@ -116,12 +127,18 @@ export const IncidenciasScreen: React.FC = () => {
                 isResuelto && styles.textGreen,
               ]}
             >
-              {isPendiente ? "Pendiente" : isEnProceso ? "En Proceso" : "Resuelto"}
+              {isPendiente
+                ? "Pendiente"
+                : isEnProceso
+                  ? "En Proceso"
+                  : "Resuelto"}
             </Text>
           </View>
         </View>
 
-        <Text style={styles.categoryText}>Categoría: {item.categoria.toUpperCase()}</Text>
+        <Text style={styles.categoryText}>
+          Categoría: {item.categoria.toUpperCase()}
+        </Text>
         <Text style={styles.cardDesc}>{item.descripcion}</Text>
 
         {item.respuestaJunta ? (
@@ -137,13 +154,20 @@ export const IncidenciasScreen: React.FC = () => {
           currentUserId={user?.uid}
           onToggleLike={async () => {
             if (!user) return;
-            await toggleLikeEntidad(item.id, "incidencias", user.uid, (item as any).likes || []);
+            await toggleLikeEntidad(
+              item.id,
+              "incidencias",
+              user.uid,
+              (item as any).likes || [],
+            );
           }}
           onOpenComments={() => setCommentTarget(item)}
         />
 
         <Text style={styles.dateText}>
-          {item.fechaCreacion ? new Date(item.fechaCreacion).toLocaleDateString() : ""}
+          {item.fechaCreacion
+            ? new Date(item.fechaCreacion).toLocaleDateString()
+            : ""}
         </Text>
       </View>
     );
@@ -153,35 +177,57 @@ export const IncidenciasScreen: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.title}>Buzón de Incidencias</Text>
-            {isAdminOrModerator && (
-              <TouchableOpacity
-                style={styles.adminBtn}
-                onPress={() => navigation.navigate("AdminIncidencias")}
-              >
-                <Text style={styles.adminBtnText}>📋 Reclamos Junta</Text>
-              </TouchableOpacity>
-            )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>Buzón de Incidencias</Text>
+              <Text style={styles.subtitle}>Reporta fallas o problemas</Text>
+            </View>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              {isAdminOrModerator && (
+                <TouchableOpacity
+                  style={styles.adminBtn}
+                  onPress={() => navigation.navigate("AdminIncidencias")}
+                >
+                  <Text style={styles.adminBtnText}>📋 Reclamos Junta</Text>
+                </TouchableOpacity>
+              )}
+              <HeaderActions />
+            </View>
           </View>
-          <Text style={styles.subtitle}>Reporta fallas o problemas directamente a la Junta</Text>
         </View>
 
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Crear Nuevo Reporte</Text>
 
           <Text style={styles.label}>Categoría</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.catScroll}
+          >
             {CATEGORIAS.map((c) => (
               <TouchableOpacity
                 key={c.value}
-                style={[styles.catChip, categoria === c.value && styles.catChipSelected]}
+                style={[
+                  styles.catChip,
+                  categoria === c.value && styles.catChipSelected,
+                ]}
                 onPress={() => setCategoria(c.value)}
               >
-                <Text style={[styles.catChipText, categoria === c.value && styles.catChipTextSelected]}>
-                  {c.icon} {c.label}
+                <Text
+                  style={[
+                    styles.catChipText,
+                    categoria === c.value && styles.catChipTextSelected,
+                  ]}
+                >
+                  {c.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -234,9 +280,12 @@ export const IncidenciasScreen: React.FC = () => {
             scrollEnabled={false}
             ListEmptyComponent={
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyIcon}>📂</Text>
-                <Text style={styles.emptyTitle}>No has registrado reclamos</Text>
-                <Text style={styles.emptySubtitle}>Tus reportes y su estatus aparecerán aquí.</Text>
+                <Text style={styles.emptyTitle}>
+                  No has registrado reclamos
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  Tus reportes y su estatus aparecerán aquí.
+                </Text>
               </View>
             }
           />

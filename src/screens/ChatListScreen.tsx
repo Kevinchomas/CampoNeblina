@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/AppNavigator";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { theme } from "../constants/theme";
 import { UserProfile } from "../constants/types";
+import { useAuth } from "../context/AuthContext";
+import { RootStackParamList } from "../navigation/AppNavigator";
 import { subscribeUsuarios } from "../services/admin";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChatList">;
@@ -28,7 +28,9 @@ export const ChatListScreen: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = subscribeUsuarios((list) => {
-      const activos = list.filter((u) => u.status === "activo" && u.uid !== user?.uid);
+      const activos = list.filter(
+        (u) => u.status === "activo" && u.uid !== user?.uid,
+      );
       setVecinos(activos);
       setLoading(false);
     });
@@ -53,10 +55,15 @@ export const ChatListScreen: React.FC = () => {
   };
 
   const renderVecinoItem = ({ item }: { item: UserProfile }) => (
-    <TouchableOpacity style={styles.vecinoCard} onPress={() => handleOpenChat(item)}>
+    <TouchableOpacity
+      style={styles.vecinoCard}
+      onPress={() => handleOpenChat(item)}
+    >
       <View style={styles.avatarCircle}>
         <Text style={styles.avatarText}>
-          {item.nombreCompleto ? item.nombreCompleto.charAt(0).toUpperCase() : "👤"}
+          {item.nombreCompleto
+            ? item.nombreCompleto.charAt(0).toUpperCase()
+            : "👤"}
         </Text>
       </View>
 
@@ -66,8 +73,6 @@ export const ChatListScreen: React.FC = () => {
           Torre {item.inmueble?.torre} - Apto {item.inmueble?.codigo}
         </Text>
       </View>
-
-      <Text style={styles.chatIcon}>💬</Text>
     </TouchableOpacity>
   );
   return (
@@ -75,14 +80,10 @@ export const ChatListScreen: React.FC = () => {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Mensajería Vecinal</Text>
-          <TouchableOpacity
-            style={styles.incidenciaBtn}
-            onPress={() => navigation.navigate("Incidencias")}
-          >
-            <Text style={styles.incidenciaBtnText}>📢 Reclamos</Text>
-          </TouchableOpacity>
         </View>
-        <Text style={styles.subtitle}>Comunícate de forma directa con tus vecinos</Text>
+        <Text style={styles.subtitle}>
+          Comunícate de forma directa con tus vecinos
+        </Text>
       </View>
 
       <View style={styles.searchBox}>
@@ -107,9 +108,10 @@ export const ChatListScreen: React.FC = () => {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyIcon}>💬</Text>
               <Text style={styles.emptyTitle}>No se encontraron vecinos</Text>
-              <Text style={styles.emptySubtitle}>Intenta con otro término de búsqueda.</Text>
+              <Text style={styles.emptySubtitle}>
+                Intenta con otro término de búsqueda.
+              </Text>
             </View>
           }
         />
@@ -120,18 +122,63 @@ export const ChatListScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F8F4" },
-  header: { padding: theme.spacing.lg, paddingTop: theme.spacing.xl, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 22, fontWeight: "bold", color: "#234919" },
+  header: {
+    padding: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  title: { fontSize: 18, fontWeight: "bold", color: "#234919" },
   subtitle: { fontSize: 13, color: "#6B7280", marginTop: 2 },
-  incidenciaBtn: { backgroundColor: "#E5EAE2", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  incidenciaBtn: {
+    backgroundColor: "#E5EAE2",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
   incidenciaBtnText: { fontSize: 12, fontWeight: "bold", color: "#234919" },
-  searchBox: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md, paddingBottom: theme.spacing.sm },
-  searchInput: { height: 44, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: theme.borderRadius.md, paddingHorizontal: theme.spacing.md, fontSize: 14, color: "#1A1D1A" },
+  searchBox: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  searchInput: {
+    height: 44,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    fontSize: 14,
+    color: "#1A1D1A",
+  },
   loadingBox: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContent: { padding: theme.spacing.lg, paddingTop: 0 },
-  vecinoCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: theme.borderRadius.md, padding: theme.spacing.md, marginBottom: theme.spacing.sm, borderWidth: 1, borderColor: "#E5E7EB" },
-  avatarCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#234919", alignItems: "center", justifyContent: "center", marginRight: theme.spacing.md },
+  vecinoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#234919",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: theme.spacing.md,
+  },
   avatarText: { color: "#FFFFFF", fontSize: 18, fontWeight: "bold" },
   vecinoInfo: { flex: 1 },
   vecinoName: { fontSize: 15, fontWeight: "bold", color: "#1A1D1A" },
@@ -140,5 +187,10 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: "center", paddingVertical: theme.spacing.xl },
   emptyIcon: { fontSize: 44, marginBottom: theme.spacing.sm },
   emptyTitle: { fontSize: 16, fontWeight: "bold", color: "#1A1D1A" },
-  emptySubtitle: { fontSize: 13, color: "#6B7280", textAlign: "center", marginTop: 4 },
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
+    marginTop: 4,
+  },
 });

@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { CommentsModal } from "../components/CommentsModal";
+import { HeaderActions } from "../components/HeaderActions";
 import { EventCard } from "../components/EventCard";
 import { SocialBar } from "../components/SocialBar";
 import {
@@ -1114,13 +1115,7 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.brandSubtitle}>Comunidad & Gestión Urbana</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.chatIconButton}
-          onPress={() => navigation.navigate("ChatList")}
-        >
-          <Ionicons name="chatbubbles-outline" size={22} color="#234919" />
-          <View style={styles.unreadDot} />
-        </TouchableOpacity>
+        <HeaderActions />
       </View>
 
       {/* Barra de Filtros Sobria (Chips / Pills) */}

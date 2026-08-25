@@ -272,7 +272,8 @@ export const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    marginRight: 12,
     fontSize: 14,
     color: "#0F172A",
     borderWidth: 1,
@@ -291,7 +292,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
   attachImgText: {
     fontSize: 13,
@@ -301,8 +302,9 @@ export const styles = StyleSheet.create({
   publishBtn: {
     backgroundColor: "#234919",
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 14,
     borderRadius: 18,
+    marginLeft: 8,
   },
   publishBtnText: {
     color: "#FFFFFF",

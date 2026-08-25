@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { UserProfile, ReportePublicacion, Incidencia } from "../constants/types";
@@ -33,6 +34,7 @@ type AdminTab = "usuarios" | "mercado" | "reclamos";
 export const AdminDashboardScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>("usuarios");
   const [loading, setLoading] = useState<boolean>(true);
+  const [userSearchQuery, setUserSearchQuery] = useState<string>("");
 
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
   const [reportesMercado, setReportesMercado] = useState<ReportePublicacion[]>([]);
@@ -254,18 +256,44 @@ export const AdminDashboardScreen: React.FC = () => {
       {loading ? (
         <ActivityIndicator size="large" color="#234919" style={{ marginTop: 40 }} />
       ) : activeTab === "usuarios" ? (
-        <FlatList
-          data={usuarios}
-          keyExtractor={(i) => i.uid}
-          renderItem={renderUserItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyBox}>
-              <Ionicons name="people-outline" size={40} color="#94A3B8" />
-              <Text style={styles.emptyTitle}>Sin usuarios registrados</Text>
+        <>
+          <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#F1F5F9", borderRadius: 8, paddingHorizontal: 12, height: 40, borderWidth: 1, borderColor: "#E2E8F0" }}>
+              <Ionicons name="search" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+              <TextInput
+                style={{ flex: 1, fontSize: 13, color: "#0F172A" }}
+                placeholder="Buscar por nombre, correo o inmueble..."
+                placeholderTextColor="#94A3B8"
+                value={userSearchQuery}
+                onChangeText={setUserSearchQuery}
+              />
+              {!!userSearchQuery && (
+                <TouchableOpacity onPress={() => setUserSearchQuery("")}>
+                  <Ionicons name="close-circle" size={16} color="#94A3B8" />
+                </TouchableOpacity>
+              )}
             </View>
-          }
-        />
+          </View>
+          <FlatList
+            data={usuarios.filter((u) => {
+              const q = userSearchQuery.toLowerCase();
+              const nombre = (u.nombreCompleto || "").toLowerCase();
+              const email = (u.email || "").toLowerCase();
+              const codigoApto = (u.inmueble?.codigo || "").toLowerCase();
+              const torre = String(u.inmueble?.torre || "").toLowerCase();
+              return nombre.includes(q) || email.includes(q) || codigoApto.includes(q) || torre.includes(q);
+            })}
+            keyExtractor={(i) => i.uid}
+            renderItem={renderUserItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Ionicons name="people-outline" size={40} color="#94A3B8" />
+                <Text style={styles.emptyTitle}>Sin usuarios registrados o coincidentes</Text>
+              </View>
+            }
+          />
+        </>
       ) : activeTab === "mercado" ? (
         <FlatList
           data={reportesMercado}
