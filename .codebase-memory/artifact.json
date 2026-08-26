@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "daa457ef72b17f4ab74979c59a24d53336e4c719",
+    "indexed_at": "2026-08-26T02:02:15Z",
+    "project": "G-dev-CampoNeblina",
+    "nodes": 579,
+    "edges": 1568,
+    "original_size": 3014656,
+    "compressed_size": 447690,
+    "compression_level": 9
+}

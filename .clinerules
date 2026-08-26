@@ -1,0 +1,44 @@
+# Reglas de Trabajo Obligatorias - Campo Neblina App (.clinerules)
+
+1. **Actualización Incremental de Memoria MCP:**
+   - Tras completar con éxito la creación o refactorización significativa de un componente, pantalla, servicio o tipo, ejecuta automáticamente las herramientas del servidor 'codebase-memory' para indexar los nuevos nodos y relaciones.
+   - Realiza actualizaciones enfocadas en los archivos modificados o creados.
+
+2. **Consulta de Dependencias:**
+   - Antes de modificar tipos globales (`src/constants/types.ts`), servicios compartidos o componentes centrales, consulta el grafo de memoria MCP para verificar las entidades que dependen de ellos y prevenir regresiones.
+
+3. **Validación de Calidad:**
+   - Ejecuta `npx tsc --noEmit` después de cada refactorización importante para garantizar la ausencia de errores en TypeScript.
+
+# REGLAS AVANZADAS DE ARQUITECTURA Y UI (REACT NATIVE)
+
+## 1. Arquitectura y Desacoplamiento
+- **Desacoplamiento de Servicios:** Toda interacción con Firebase (Firestore, Auth, Storage) o APIs externas DEBE residir en `src/services/` o custom hooks. Prohibido llamar a `doc()`, `getDocs()` o `onSnapshot()` dentro del JSX o handlers de componentes UI.
+- **Prohibición de Componentes Anidados:** NUNCA declarar un componente React dentro del cuerpo de otro componente. Subvistas o componentes secundarios deben ir fuera del componente principal o en su propio archivo en `src/components/`.
+- **Tipado Estricto:** Prohibido el uso de `any`. Tipar explícitamente las respuestas de Firebase, props y parámetros utilizando las interfaces de `src/constants/types.ts`.
+
+## 2. Rendimiento UI y Listas Virtualizadas
+- **Manejo de FlatList y SectionList:**
+  * NUNCA definir `renderItem` ni `ListHeaderComponent` como funciones inline.
+  * `keyExtractor` debe usar siempre un ID único tipo string (ej. `item.id`). PROHIBIDO usar el índice de array (`(item, index) => index.toString()`).
+  * Para ítems de listas con renders pesados, aislar el ítem en su propio archivo y envolverlo en `React.memo`.
+- **Estilos Eficientes:** Utilizar exclusivamente `StyleSheet.create` o constantes de diseño. Evitar objetos inline (`style={{ ... }}`) salvo para estilos dinámicos calculados en tiempo de ejecución.
+- **Prevención de Fugas de Memoria:** Toda suscripción activa (suscripciones a Firestore con `onSnapshot`, listeners de navegación, `setInterval`, etc.) DEBE implementar su función de limpieza (`return () => unsubscribe()`) en el retorno del `useEffect`.
+
+## 3. Consistencia Visual y Experiencia de Usuario (UX)
+- **Tokens del Sistema de Diseño:** Usar siempre los colores y espaciados de `src/constants/theme.ts`. No hardcodear valores Hex (ej. `#234919`) directamente en componentes.
+- **Gestión del Teclado y Pantallas Formulario:** Los formularios deben usar `KeyboardAvoidingView` (configurando `behavior={Platform.OS === "ios" ? "padding" : "height"}`) y `ScrollView` con la propiedad `keyboardShouldPersistTaps="handled"`.
+- **Manejo de Estados de Carga y Vacío:** Toda pantalla que consulte datos asíncronos debe incluir un indicador de carga (`ActivityIndicator`) y un `ListEmptyComponent` con feedback visual si no hay registros.
+
+## 4. Gestión de Planes de Tarea (TASK.md)
+- Cuando el usuario solicite redactar un plan en `TASK.md`, utiliza siempre la estructura y secciones definidas en `TASK_TEMPLATE.md`.
+
+## CIERRE Y ARCHIVADO DE TAREAS (SPEC-DRIVEN WORKFLOW)
+- Al completar el 100% de los Criterios de Aceptación definidos en `TASK.md`:
+  1. Mueve el archivo `TASK.md` a `docs/tasks/TASK-[ID]-[NombreCorto].md` (crea el directorio `docs/tasks/` si no existe).
+  2. Registra una entrada concisa con el `[ID]` y descripción de la tarea en `CHANGELOG.md` (crea el archivo en la raíz si no existe).
+  3. Ejecuta la actualización incremental en el servidor de memoria MCP (`codebase-memory`) registrando las entidades y relaciones modificadas o creadas.
+  4. Elimina el archivo `TASK.md` borrador de la raíz una vez archivado.
+
+
+
