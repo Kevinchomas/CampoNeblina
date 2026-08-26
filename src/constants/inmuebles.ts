@@ -11,6 +11,17 @@ export const generateInmuebles = (): Inmueble[] => {
   const torres: (7 | 8)[] = [7, 8];
 
   for (const torre of torres) {
+    // Planta Baja (PB) - 6 apartamentos (1 al 6)
+    for (let apto = 1; apto <= 6; apto++) {
+      list.push({
+        torre,
+        piso: "PB",
+        apartamento: apto,
+        codigo: `${torre}-PB-${apto}`,
+      });
+    }
+
+    // Pisos 1 al 15
     for (let piso = 1; piso <= 15; piso++) {
       const aptos = piso === 3 ? [1, 2, 4, 5, 6] : [1, 2, 3, 4, 5, 6];
       for (const apto of aptos) {

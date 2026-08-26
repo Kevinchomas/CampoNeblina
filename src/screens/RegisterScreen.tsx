@@ -31,7 +31,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [torre, setTorre] = useState<7 | 8>(7);
-  const [piso, setPiso] = useState<number>(1);
+  const [piso, setPiso] = useState<number | "PB">("PB");
   const [apartamento, setApartamento] = useState<number>(1);
   const [loading, setLoading] = useState(false);
 
@@ -90,7 +90,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       setLoading(false);
     }
   };
-  const pisosDisponibles = Array.from({ length: 15 }, (_, i) => i + 1);
+  const pisosDisponibles: (number | "PB")[] = ["PB", ...Array.from({ length: 15 }, (_, i) => i + 1)];
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>
@@ -140,7 +140,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
             {pisosDisponibles.map((p) => (
               <TouchableOpacity key={p} style={[styles.chipButton, piso === p && styles.chipButtonSelected]} onPress={() => setPiso(p)}>
-                <Text style={[styles.chipText, piso === p && styles.chipTextSelected]}>Piso {p} {p === 3 ? "(5 aptos)" : ""}</Text>
+                <Text style={[styles.chipText, piso === p && styles.chipTextSelected]}>
+                  {p === "PB" ? "Planta Baja" : `Piso ${p} ${p === 3 ? "(5 aptos)" : ""}`}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>

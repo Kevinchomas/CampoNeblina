@@ -8,9 +8,9 @@ export type SolvenciaStatus = "al_dia" | "pendiente";
 
 export interface Inmueble {
   torre: 7 | 8;
-  piso: number;
+  piso: number | "PB";
   apartamento: number;
-  codigo: string; // Formato "[Torre]-[Piso]-[Apto]" (Ejemplo: "8-1-3")
+  codigo: string; // Formato "[Torre]-[Piso]-[Apto]" (Ejemplo: "8-PB-1" o "8-3-2")
 }
 
 export interface UserProfile {
